@@ -18,7 +18,7 @@ jobs:
       - name: Execute training notebook
         run: jupyter nbconvert --to notebook --execute notebooks/model_training.ipynb --output notebooks/model_training_out.ipynb
       - name: Upload reports artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: TaleemAI-reports
           path: reports/
