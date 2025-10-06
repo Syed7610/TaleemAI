@@ -2,23 +2,52 @@ name: Train and Report
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Python
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Execute training notebook
-        run: jupyter nbconvert --to notebook --execute notebooks/model_training.ipynb --output notebooks/model_training_out.ipynb
-      - name: Upload reports artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: TaleemAI-reports
-          path: reports/
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run Notebooks (Model Training)
+        run: |
+          python - <<'EOF'
+          import nbformat, os
+          from nbconvert.preprocessors import ExecutePreprocessor
+
+          nb_files = [
+              "notebooks/classification_model.ipynb",
+              "notebooks/forecasting_model.ipynb",
+              "notebooks/nlp_model.ipynb"
+          ]
+
+          for nb_path in nb_files:
+              if os.path.exists(nb_path):
+                  with open(nb_path) as f:
+                      nb = nbformat.read(f, as_version=4)
+                  ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+                  ep.preprocess(nb, {'metadata': {'path': './'}})
+                  with open(nb_path, 'w', encoding='utf-8') as f:
+                      nbformat.write(nb, f)
+          EOF
+
+      - name: Commit and Push Reports
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "actions@github.com"
+          git add reports/ results/
+          git commit -m "🤖 Auto update reports from training run" || echo "No changes"
+          git push
