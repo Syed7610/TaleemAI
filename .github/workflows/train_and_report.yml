@@ -7,28 +7,35 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4  # updated from v3 to v4
+
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5  # updated from v4 to v5
         with:
           python-version: '3.9'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
       - name: Run retrain script (safe)
         run: |
           python - <<'PY'
           from pathlib import Path
+          from datetime import datetime
           p = Path('reports')
           p.mkdir(parents=True, exist_ok=True)
           with open(p / 'auto_retrain.txt','w') as f:
-              f.write('Auto retrain at: ' + __import__('datetime').datetime.now().isoformat())
-          print("Retrain marker written")
+              f.write('Auto retrain at: ' + datetime.now().isoformat())
+          print("✅ Retrain marker written successfully.")
           PY
+
       - name: Upload reports artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # updated from v3 to v4
         with:
           name: TaleemAI-reports
           path: reports/
