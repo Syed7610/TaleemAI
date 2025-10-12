@@ -1,0 +1,155 @@
+# =============================
+# ✅ TaleemAI — Self-Running Notebook (No Upload Needed)
+# This code is ready to execute in a Python environment or a single Jupyter cell.
+# =============================
+
+# 1️⃣ Install dependencies (uncomment if running in an environment without them)
+# !pip install pandas numpy scikit-learn matplotlib seaborn --quiet
+
+# 2️⃣ Import libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+# 3️⃣ Create a balanced sample dataset
+np.random.seed(42)
+num_samples = 200
+
+data = {
+    'gender': np.random.choice(['Male', 'Female'], num_samples),
+    'country': np.random.choice(['Pakistan', 'India', 'Bangladesh', 'Nepal'], num_samples),
+    'age': np.random.randint(16, 22, num_samples),
+    'study_hours': np.random.uniform(1, 10, num_samples).round(2),
+    'attendance': np.random.uniform(60, 100, num_samples).round(2),
+    'final_grade': np.random.choice(['Pass', 'Fail'], num_samples, p=[0.7, 0.3])
+}
+
+df = pd.DataFrame(data)
+print("✅ Sample dataset created successfully!")
+print(df.head())
+
+# 4️⃣ Encode categorical columns
+le = LabelEncoder()
+df['gender'] = le.fit_transform(df['gender'])
+df['country'] = le.fit_transform(df['country'])
+df['final_grade'] = le.fit_transform(df['final_grade']) # 'Pass' will be 1, 'Fail' will be 0 (or vice-versa depending on lexical order)
+
+# 5️⃣ Split data
+X = df.drop('final_grade', axis=1)
+y = df['final_grade']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# 6️⃣ Train model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# 7️⃣ Evaluate
+y_pred = model.predict(X_test)
+acc = accuracy_score(y_test, y_pred)
+
+print(f"\n✅ Model Accuracy: {acc*100:.2f}%\n")
+print("Classification Report:\n", classification_report(y_test, y_pred))
+
+# 8️⃣ Visualize Confusion Matrix
+plt.figure(figsize=(5,4))
+sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt='d', cmap='Blues')
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
+
+import subprocess
+import os
+
+# --- Configuration ---
+CLASSIFICATION_NOTEBOOK = "classification_model.ipynb"
+FORECASTING_NOTEBOOK = "forecasting_model.ipynb"
+
+# --- Function to execute a notebook ---
+def execute_notebook(notebook_path):
+    """Executes a Jupyter notebook using nbconvert."""
+    if not os.path.exists(notebook_path):
+        print(f"Error: Notebook '{notebook_path}' not found. Please ensure it exists.")
+        return False
+    print(f"Executing notebook: {notebook_path}...")
+    try:
+        subprocess.run(
+            ["jupyter", "nbconvert", "--to", "notebook", "--execute", notebook_path, "--inplace"],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        print(f"Successfully executed {notebook_path}")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing notebook {notebook_path}:")
+        print(f"Stdout: {e.stdout}")
+        print(f"Stderr: {e.stderr}")
+        return False
+    except FileNotFoundError:
+        print("Error: 'jupyter' command not found. Please ensure Jupyter is installed and in your PATH.")
+        print("You might need to install it: pip install jupyter")
+        return False
+
+# --- Main training pipeline ---
+print("Starting central training pipeline...")
+
+# --- Step 1: Run Classification Model ---
+print("\n--- Running Classification Model Training ---")
+if execute_notebook(CLASSIFICATION_NOTEBOOK):
+    print("Classification model training completed.")
+else:
+    print("Classification model training failed. Please check the logs.")
+
+# --- Step 2: Run Forecasting Model ---
+print("\n--- Running Forecasting Model Training ---")
+if execute_notebook(FORECASTING_NOTEBOOK):
+    print("Forecasting model training completed.")
+else:
+    print("Forecasting model training failed. Please check the logs.")
+
+print("\nCentral training pipeline finished.")
+
+import pandas as pd
+import os
+
+# --- Ensure directories exist ---
+os.makedirs('data', exist_ok=True)
+os.makedirs('results', exist_ok=True)
+
+# --- Create dummy data if 'student_performance.csv' does not exist ---
+data_file_path = 'data/student_performance.csv'
+if not os.path.exists(data_file_path):
+    dummy_data = {
+        'gender': ['male', 'female', 'male', 'female', 'male'],
+        'parental level of education': ['bachelor\'s degree', 'some college', 'master\'s degree', 'high school', None],
+        'math score': [70, 65, 80, 50, 75]
+    }
+    dummy_df = pd.DataFrame(dummy_data)
+    dummy_df.to_csv(data_file_path, index=False)
+    print(f"Dummy '{data_file_path}' created for demonstration.")
+else:
+    print(f"'{data_file_path}' already exists. Using existing data.")
+
+# --- Load data ---
+df = pd.read_csv(data_file_path)
+
+# --- NLP processing ---
+# Fill NaN/None in 'parental level of education' before conversion to string
+df['lesson_text'] = df['parental level of education'].fillna('').astype(str).apply(lambda s: 'تعلیم ' + s if s else 'تعلیم')
+
+# Calculate token count
+df['token_count'] = df['lesson_text'].str.split().apply(len)
+
+# --- Display and save results ---
+print("\nPreview of 'lesson_text' and 'token_count':")
+print(df[['lesson_text', 'token_count']].head())
+
+output_file_path = 'results/nlp_preview.csv'
+df.to_csv(output_file_path, index=False)
+print(f"\nNLP preview saved to {output_file_path}")
